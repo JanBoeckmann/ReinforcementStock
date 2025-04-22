@@ -11,14 +11,16 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 
 from Environments.environments import EnvironmentStock
+from Policies.policy import Policy
 
 env = EnvironmentStock()
 save_path = os.path.join("Training", "Saved Models", "PPO_perish_full_information")
 model_input_string = "MlpPolicy"
 load_model = False
-train_model = True
-evaluate_model = True
-test_model_on_environment = False
+train_model = False
+evaluate_model = False
+test_model_on_environment = True
+use_reinforcement_learning_in_test = False
 
 #for faster training
 env = DummyVecEnv([lambda: env])
@@ -44,16 +46,22 @@ if evaluate_model:
 # Test Model
 if test_model_on_environment:
     episodes = 5
+    total_reward = 0
     for episode in range(1, episodes + 1):
         obs = env.reset()
         done = False
         score = 0
 
         while not done:
-            action, _ = model.predict(obs)
+            if use_reinforcement_learning_in_test:
+                action, _ = model.predict(obs)
+            else:
+                action, _ = Policy().get_action(obs)
             obs, reward, done, info = env.step(action)
             score += reward
             print(f"Action: {action}, Obs: {obs}, Reward: {reward}")
             print("__________________________")
 
         print(f"Episode: {episode}, Score: {score}")
+        total_reward += score
+    print(f"Average Score: {total_reward / episodes}")
